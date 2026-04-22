@@ -21,16 +21,17 @@
 ```text
 AIoTHW2/
 ├── CompleteProject/        # 🚀 [最終交付版本] 完美整合且支援 Vercel 佈署的專案核心
-│   ├── api/                # 後端 API 與 Serverless Functions 區 (原 backend)
-│   │   ├── index.py        # Flask 伺服器主程式 (負責 API 路由定義)
-│   │   ├── data_updater.py # 核心爬蟲腳本 (負責呼叫 CWA API、寫入暫存區並更新 DB)
+│   ├── backend/            # 後端 API 與資料處理區
+│   │   ├── app.py          # Flask 伺服器主程式 (負責 API 路由定義)
+│   │   ├── data_updater.py # 核心爬蟲腳本 (負責呼叫 CWA API、寫入暫存區並更新 SQLite)
+│   │   ├── data.db         # [自動生成] SQLite 資料庫 (存放氣象預報資料)
 │   │   └── requirements.txt# Python 依賴清單
-│   ├── src/                # 前端核心元件庫 (App, MapComponent, DailyTable, WeeklyChart)
-│   ├── index.html          # 前端進入點
-│   ├── index.css           # 全域樣式與 RWD 響應式配置
-│   ├── package.json        # Node.js 依賴清單
-│   ├── vite.config.js      # Vite 配置 (包含 0.0.0.0 IP 綁定與 /api Proxy 設定)
-│   ├── vercel.json         # 雲端佈署設定檔 (處理排程 Cron Jobs 與基礎路由)
+│   ├── frontend/           # 前端 UI 介面區 (React + Vite)
+│   │   ├── src/            # 核心元件庫 (App, MapComponent, DailyTable, WeeklyChart)
+│   │   ├── index.css       # 全域樣式與 RWD 響應式配置
+│   │   ├── package.json    # Node.js 依賴清單
+│   │   └── vite.config.js  # Vite 配置 (包含 0.0.0.0 IP 綁定與 /api Proxy 設定)
+│   ├── vercel.json         # 雲端佈署設定檔 (處理 /api 路由轉發與排程 Cron Jobs)
 │   └── .gitignore          
 │
 ├── HW2-1_2-2/              # [歷史階段 1] 氣象資料抓取與 JSON 解析腳本

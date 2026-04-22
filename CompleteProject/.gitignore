@@ -11,8 +11,8 @@ env.bak/
 venv.bak/
 
 # Project specifics
-api/data.db
-api/output.json
+backend/data.db
+backend/output.json
 
 # Node
 node_modules/
