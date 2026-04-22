@@ -17,7 +17,7 @@ function App() {
 
   // 1. 取得下拉選單選項
   useEffect(() => {
-    fetch('http://localhost:5000/api/options')
+    fetch('/api/options')
       .then((res) => res.json())
       .then((data) => {
         setOptions(data);
@@ -33,7 +33,7 @@ function App() {
   // 2. 當日期變更時，抓取全區域的該日數值(餵給地圖與表格)
   useEffect(() => {
     if (!selectedDate) return;
-    fetch(`http://localhost:5000/api/forecast_all?date=${encodeURIComponent(selectedDate)}`)
+    fetch(`/api/forecast_all?date=${encodeURIComponent(selectedDate)}`)
         .then(res => res.json())
         .then(data => setAllForecasts(data))
         .catch(console.error);
@@ -46,7 +46,7 @@ function App() {
     setLoading(true);
     setError('');
     
-    fetch(`http://localhost:5000/api/forecast?region=${encodeURIComponent(selectedRegion)}&date=${encodeURIComponent(selectedDate)}`)
+    fetch(`/api/forecast?region=${encodeURIComponent(selectedRegion)}&date=${encodeURIComponent(selectedDate)}`)
       .then(res => {
         if (!res.ok) throw new Error('找不到該日期/地區的資料');
         return res.json();
@@ -104,7 +104,7 @@ function App() {
       </div>
 
       {/* 上半部：地圖與當日單區卡片 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '2rem', marginBottom: '2rem' }}>
         <div style={{ minWidth: 0 }}>
             {allForecasts && (
                 <MapComponent 
@@ -122,8 +122,8 @@ function App() {
                 </div>
             ) : forecast ? (
                 <div className="temperature-card" style={{ height: '400px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '2.5rem' }}>
-                    <h2 style={{fontSize: '1.8rem', fontWeight: 600, color: 'white', margin: 0, textAlign: 'center'}}>{selectedRegion} - {selectedDate}</h2>
-                    <div className="temps-display" style={{ display: 'flex', flexDirection: 'row', gap: '2.5rem', margin: 0, justifyContent: 'center', width: '90%' }}>
+                    <h2 className="responsive-title">{selectedRegion} - {selectedDate}</h2>
+                    <div className="responsive-temps-display">
                         <div className="temp-pill low" style={{ flex: 1, textAlign: 'center', padding: '1.5rem' }}>
                             <div className="temp-label">最低溫 (MinT)</div>
                             <div className="temp-value">
@@ -149,7 +149,7 @@ function App() {
       </div>
       
       {/* 下半部：當日全台表格與單區一週折線圖 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '2rem' }}>
         <div style={{ minWidth: 0 }}>
             <DailyTable allData={allForecasts} selectedDate={selectedDate} />
         </div>

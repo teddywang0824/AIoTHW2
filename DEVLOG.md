@@ -311,6 +311,11 @@ Chronological record of development sessions, decisions, and changes.
 - 為了讓 UI 整體美感更高，重新設定回 **Dark Matter 深色質感地圖**，確保跟整體太空/夜間毛玻璃的 Dashboard 風格相互輝映。
 - 移除了總覽表格 `DailyTable` 標題的 `position: sticky` 屬性，讓標題能夠自然滑動，符合使用者的瀏覽習慣期望。
 - 新增 `WeeklyChart` 的「圖表/表格」切換鈕，使用者點擊即可將折線圖轉為具備黏性標題 (Sticky Header) 的滾動數據清單，呈現每日的「最低溫」與「最高溫」。
+- **網路佈署優化**：將 Flask 綁定於 `0.0.0.0` 允許全網域訪問；同時在 `vite.config.js` 設定 `host: '0.0.0.0'` 並配置 `proxy`，讓前端請求統一走相對路徑 `/api`，徹底解決區域網路（LAN）下外部裝置連線時遭遇的連線異常與 CORS 問題。
+- **響應式設計 (RWD) 修正**：全面優化行動裝置（如手機）的瀏覽體驗：
+  1. 將 CSS Grid 的欄寬從硬編碼的 `400px` 修正為 `minmax(min(100%, 320px), 1fr)`，避免小螢幕破版與橫向捲軸。
+  2. 加入 `@media (max-width: 640px)` 斷點，讓外層邊距縮小、標題字體按比例縮小。
+  3. 新增 `.responsive-temps-display` 樣式，當在手機上瀏覽時，最高/最低溫的小卡片會自動從「左右並列」切換為「上下堆疊」，確保數字不會擠壓變形。
 
 **Next steps:**
 - 準備收尾。

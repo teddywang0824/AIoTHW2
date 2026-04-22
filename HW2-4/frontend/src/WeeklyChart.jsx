@@ -14,7 +14,7 @@ const WeeklyChart = ({ region }) => {
     setError('');
 
     // 呼叫新寫的 /api/forecast_week 來取得一週趨勢
-    fetch(`http://localhost:5000/api/forecast_week?region=${encodeURIComponent(region)}`)
+    fetch(`/api/forecast_week?region=${encodeURIComponent(region)}`)
       .then(res => {
         if (!res.ok) throw new Error('無法取得一週數據');
         return res.json();
