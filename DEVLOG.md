@@ -317,5 +317,25 @@ Chronological record of development sessions, decisions, and changes.
   2. 加入 `@media (max-width: 640px)` 斷點，讓外層邊距縮小、標題字體按比例縮小。
   3. 新增 `.responsive-temps-display` 樣式，當在手機上瀏覽時，最高/最低溫的小卡片會自動從「左右並列」切換為「上下堆疊」，確保數字不會擠壓變形。
 
+---
+
+## Session: 2026-04-22 專案整合與 Vercel 佈署架構重構
+
+**Objective:**
+將 HW2 所有的零散作業 (HW2-1_2-2, HW2-3, HW2-4) 整合為單一且支援雲端佈署的 `CompleteProject` 完整專案，並實現「自動爬取最新資料更新資料庫」的核心需求。
+
+**Action:**
+- 建立了全新的 `CompleteProject` 目錄，內含 `backend` 與 `frontend` 實現乾淨的前後端分離標準專案結構。
+- **後端架構大重構 (Vercel Ready)**：
+  - 將原先抓取資料的 `get_api.py` 與存入資料庫的 `save_to_db.py` 整合為單一核心模組 `data_updater.py`。
+  - 在本地端實作了背景自動排程器 (Background Thread)，於 `app.py` 啟動時自動在背景運作，**每 4 小時自動抓取一次最新天氣資料**。
+  - 考量到 Vercel Serverless 平台的特殊限制（無法常駐背景執行緒且檔案系統唯讀），加入了環境變數檢查 (`IS_VERCEL`)，在雲端環境下自動將資料庫與中繼檔案寫入允許寫入的 `/tmp` 暫存區。
+  - 新增了 **冷啟動 (Cold Start) 偵測**：若發現 `/tmp` 中的資料庫消失，程式會立刻在發出 API 回應前重新爬取資料，確保網頁永遠有最新資料不會因伺服器重啟而崩潰。
+  - 新增了一支專門供定時任務使用的 API 路由 `/api/cron_update`。
+- 複製並銜接了前一階段優化好的 Vite + React 前端介面進入 `CompleteProject/frontend`。
+- 新增 `vercel.json` 設定檔，定義了路由轉發規則 (將 `/api` 流量導向 Python Flask，其餘全數交給 React)，並且配置了 **Vercel Cron Jobs** 定時器來每四小時戳一次更新 API。
+- 加入了 `.gitignore` 避免把本地快取、Node Modules 或是本地建立的 SQLite 資料庫檔推送到 GitHub 造成版本髒亂。
+- **Bug Fix**: 修正 `CompleteProject/frontend` 中 `MapComponent.jsx` 因為不小心將 Array 誤當 Object 讀取而導致地圖圓點溫度顏色消失的問題，恢復原本的熱力色彩標記。
+
 **Next steps:**
-- 準備收尾。
+- 使用者將此專案推送到 GitHub 並進行 Vercel 正式上線佈署。

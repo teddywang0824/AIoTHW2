@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+env.bak/
+venv.bak/
+
+# Project specifics
+backend/data.db
+backend/output.json
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+.npm/
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
