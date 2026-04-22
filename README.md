@@ -23,9 +23,10 @@ AIoTHW2/
 ├── CompleteProject/        # 🚀 [最終交付版本] 完美整合且支援 Vercel 佈署的專案核心
 │   ├── backend/            # 後端 API 與資料處理區
 │   │   ├── app.py          # Flask 伺服器主程式 (負責 API 路由定義)
-│   │   ├── data_updater.py # 核心爬蟲腳本 (負責呼叫 CWA API、寫入暫存區並更新 SQLite)
+│   │   ├── data_updater.py # 核心爬蟲腳本 (負責呼叫 CWA API、直接於記憶體處理寫入 DB)
 │   │   ├── data.db         # [自動生成] SQLite 資料庫 (存放氣象預報資料)
-│   │   └── requirements.txt# Python 依賴清單
+│   │   ├── requirements.txt# Python 依賴清單
+│   │   └── vercel.json     # 後端專屬 Vercel 設定檔 (供 Microfrontends 識別 Python)
 │   ├── frontend/           # 前端 UI 介面區 (React + Vite)
 │   │   ├── src/            # 核心元件庫 (App, MapComponent, DailyTable, WeeklyChart)
 │   │   ├── index.css       # 全域樣式與 RWD 響應式配置

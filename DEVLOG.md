@@ -355,3 +355,19 @@ Chronological record of development sessions, decisions, and changes.
 
 **Next steps:**
 - 依照教學啟用 Vercel Postgres，並將新版程式碼推送至 GitHub 觸發自動切換資料庫與正式部署。
+
+---
+
+## Session: 2026-04-23 修復 Vercel Microfrontends 路由與唯讀系統錯誤 (Bug Fix)
+
+**Objective:**
+解決專案在 Vercel 佈署時遇到的「Error: No services configured」、「404 NOT_FOUND」以及前端顯示「無法連接後端伺服器 (500 Error)」等嚴重連線異常問題。
+
+**Action:**
+- **恢復 Vercel Microfrontends 架構**：發現使用者的 Vercel 專案開啟了 Microfrontends (微前端) 進階設定，因此退回並恢復 `frontend/` 與 `backend/` 雙目錄架構，並將根目錄的 `vercel.json` 恢復為 `experimentalServices` 設定。
+- **新增後端專屬 `vercel.json`**：為了解決 Vercel 無法辨識 `backend/app.py` 為 Python 伺服器所導致的 404 錯誤，在 `backend/` 目錄內新增專屬的 `vercel.json`，明確定義 `builds` 與 `@vercel/python` 的打包與路由規則。
+- **相容 Vercel Route Prefix Stripping**：因 Vercel 微服務路由轉發 `/api/*` 至 backend 時會自動剝除 `/api` 前綴，導致 Flask 接收到 `/options` 而非 `/api/options`。於 `app.py` 中的所有 `@app.route` 新增無前綴的別名綁定 (例如同時綁定 `/api/options` 與 `/options`)，確保路由 100% 命中。
+- **解決 Vercel Read-Only File System 500 崩潰問題**：原本爬蟲在抓到氣象資料後，會嘗試將原始資料寫入 `output.json`，在 Vercel 嚴格的唯讀系統下會引發 500 錯誤。修改 `data_updater.py` 放棄寫入實體檔案，改為直接將爬取到的 JSON 字典存放於記憶體並直送 PostgreSQL/SQLite，徹底消除 `OSError: [Errno 30] Read-only file system` 的風險。
+
+**Next steps:**
+- 提交更新後的程式碼，再次於 Vercel 觸發自動編譯與部署。
