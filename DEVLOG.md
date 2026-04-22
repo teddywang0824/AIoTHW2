@@ -333,7 +333,7 @@ Chronological record of development sessions, decisions, and changes.
   - 新增了 **冷啟動 (Cold Start) 偵測**：若發現 `/tmp` 中的資料庫消失，程式會立刻在發出 API 回應前重新爬取資料，確保網頁永遠有最新資料不會因伺服器重啟而崩潰。
   - 新增了一支專門供定時任務使用的 API 路由 `/api/cron_update`。
 - 複製並銜接了前一階段優化好的 Vite + React 前端介面進入 `CompleteProject/frontend`。
-- 新增 `vercel.json` 設定檔，定義了路由轉發規則 (將 `/api` 流量導向 Python Flask，其餘全數交給 React)，並且配置了 **Vercel Cron Jobs** 定時器來每四小時戳一次更新 API。
+- 新增 `vercel.json` 設定檔，定義了路由轉發規則 (將 `/api` 流量導向 Python Flask，其餘全數交給 React)，並且配置了 **Vercel Cron Jobs** 定時器，調整為台灣時間每天晚上 8 點 (12:00 UTC) 觸發資料更新。
 - 加入了 `.gitignore` 避免把本地快取、Node Modules 或是本地建立的 SQLite 資料庫檔推送到 GitHub 造成版本髒亂。
 - **Bug Fix**: 修正 `CompleteProject/frontend` 中 `MapComponent.jsx` 因為不小心將 Array 誤當 Object 讀取而導致地圖圓點溫度顏色消失的問題，恢復原本的熱力色彩標記。
 
