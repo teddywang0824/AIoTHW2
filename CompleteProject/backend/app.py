@@ -35,6 +35,7 @@ def execute_query(query, params=(), fetch_all=True):
     return result
 
 @app.route('/api/cron_update', methods=['GET'])
+@app.route('/cron_update', methods=['GET'])
 def cron_update():
     """Vercel Cron Job endpoint 呼叫此 API 以自動更新"""
     try:
@@ -44,6 +45,7 @@ def cron_update():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/options', methods=['GET'])
+@app.route('/options', methods=['GET'])
 def get_options():
     try:
         data_updater.init_db_if_needed() # 確保在 Vercel cold start 狀態下，必定先抓資料
@@ -59,6 +61,7 @@ def get_options():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/forecast', methods=['GET'])
+@app.route('/forecast', methods=['GET'])
 def get_forecast():
     region = request.args.get('region')
     date = request.args.get('date')
@@ -81,6 +84,7 @@ def get_forecast():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/forecast_all', methods=['GET'])
+@app.route('/forecast_all', methods=['GET'])
 def get_forecast_all():
     date = request.args.get('date')
     if not date:
@@ -101,6 +105,7 @@ def get_forecast_all():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/forecast_week', methods=['GET'])
+@app.route('/forecast_week', methods=['GET'])
 def get_forecast_week():
     region = request.args.get('region')
     if not region:

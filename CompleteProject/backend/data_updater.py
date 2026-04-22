@@ -35,30 +35,26 @@ def fetch_and_save_weather_data():
     api_key = os.environ.get("CWA_API_KEY")
     if not api_key:
         print("[DataUpdater] 錯誤：找不到 CWA_API_KEY 環境變數，請確認 .env 檔案或 Vercel 設定。")
-        return
+        return None
 
     url = f"https://opendata.cwa.gov.tw/fileapi/v1/opendataapi/F-A0010-001?Authorization={api_key}&downloadType=WEB&format=JSON"
     
     import urllib3
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     
-    print("[DataUpdater] 正在請求中央氣象署開放資料...")
     try:
-        response = requests.get(url, verify=False, timeout=30)
-        if response.status_code == 200:
-            data = response.json()
-            
-            # 儲存 output.json
-            with open(JSON_PATH, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=4, ensure_ascii=False)
-            print(f"[DataUpdater] 資料已解析並儲存至 {JSON_PATH}")
-            
-            # 解析並存入 SQLite
-            _insert_json_to_db(data)
-        else:
-            print(f"[DataUpdater] 請求失敗，狀態碼: {response.status_code}")
+        print("[DataUpdater] 正在從氣象署 API 獲取資料...")
+        response = requests.get(url, verify=False)
+        response.raise_for_status()
+        
+        # 取得 JSON 資料（不寫入硬碟以避免 Vercel Read-Only 錯誤）
+        weather_data = response.json()
+        print(f"[DataUpdater] 成功獲取資料，直接進入資料庫寫入階段")
+        _insert_json_to_db(weather_data)
+        return weather_data
     except Exception as e:
-        print(f"[DataUpdater] 爬取資料時發生錯誤: {e}")
+        print(f"[DataUpdater] 抓取 API 發生錯誤: {e}")
+        return None
 
 def _insert_json_to_db(data):
     is_postgres = POSTGRES_URL and psycopg2 is not None
