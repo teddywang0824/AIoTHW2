@@ -3,7 +3,15 @@ import json
 import os
 
 def main():
-    url = "https://opendata.cwa.gov.tw/fileapi/v1/opendataapi/F-A0010-001?Authorization=CWA-F44C59DF-C342-4C2C-8FB4-E236A6383204&downloadType=WEB&format=JSON"
+    from dotenv import load_dotenv
+    load_dotenv()
+    
+    api_key = os.environ.get("CWA_API_KEY")
+    if not api_key:
+        print("錯誤：找不到 CWA_API_KEY 環境變數，請確認 .env 檔案設定。")
+        return
+        
+    url = f"https://opendata.cwa.gov.tw/fileapi/v1/opendataapi/F-A0010-001?Authorization={api_key}&downloadType=WEB&format=JSON"
     
     import urllib3
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)

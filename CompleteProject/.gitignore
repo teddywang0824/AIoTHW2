@@ -25,3 +25,6 @@ dist-ssr/
 .vscode/
 .idea/
 .DS_Store
+
+# Env files
+.env

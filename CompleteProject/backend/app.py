@@ -10,10 +10,29 @@ CORS(app)
 
 DB_PATH = data_updater.DB_PATH
 
-def get_db_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+def execute_query(query, params=(), fetch_all=True):
+    is_postgres = data_updater.POSTGRES_URL and data_updater.psycopg2 is not None
+    
+    if is_postgres:
+        conn = data_updater.psycopg2.connect(data_updater.POSTGRES_URL)
+        cursor = conn.cursor(cursor_factory=data_updater.psycopg2.extras.RealDictCursor)
+        # 轉換 SQLite 參數綁定 ? 為 Postgres 的 %s
+        query = query.replace('?', '%s')
+    else:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+    cursor.execute(query, params)
+    
+    if fetch_all:
+        result = [dict(row) for row in cursor.fetchall()]
+    else:
+        row = cursor.fetchone()
+        result = dict(row) if row else None
+        
+    conn.close()
+    return result
 
 @app.route('/api/cron_update', methods=['GET'])
 def cron_update():
@@ -28,14 +47,13 @@ def cron_update():
 def get_options():
     try:
         data_updater.init_db_if_needed() # 確保在 Vercel cold start 狀態下，必定先抓資料
-        conn = get_db_connection()
-        regions = conn.execute('SELECT DISTINCT regionName FROM TemperatureForecasts ORDER BY regionName').fetchall()
-        dates = conn.execute('SELECT DISTINCT dataDate FROM TemperatureForecasts ORDER BY dataDate').fetchall()
-        conn.close()
+        
+        regions = execute_query('SELECT DISTINCT regionName FROM TemperatureForecasts ORDER BY regionName')
+        dates = execute_query('SELECT DISTINCT dataDate FROM TemperatureForecasts ORDER BY dataDate')
 
         return jsonify({
-            "regions": [row['regionName'] for row in regions],
-            "dates": [row['dataDate'] for row in dates]
+            "regions": [row.get('regionname', row.get('regionName')) for row in regions],
+            "dates": [row.get('datadate', row.get('dataDate')) for row in dates]
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -50,12 +68,10 @@ def get_forecast():
 
     try:
         data_updater.init_db_if_needed()
-        conn = get_db_connection()
-        row = conn.execute('''
+        row = execute_query('''
             SELECT mint, maxt FROM TemperatureForecasts 
             WHERE regionName = ? AND dataDate = ?
-        ''', (region, date)).fetchone()
-        conn.close()
+        ''', (region, date), fetch_all=False)
 
         if row:
             return jsonify({"mint": row['mint'], "maxt": row['maxt']})
@@ -72,14 +88,14 @@ def get_forecast_all():
 
     try:
         data_updater.init_db_if_needed()
-        conn = get_db_connection()
-        rows = conn.execute('''
+        rows = execute_query('''
             SELECT regionName, mint, maxt FROM TemperatureForecasts 
             WHERE dataDate = ?
-        ''', (date,)).fetchall()
-        conn.close()
+        ''', (date,))
 
-        result = [{"region": row['regionName'], "mint": row['mint'], "maxt": row['maxt']} for row in rows]
+        result = [{"region": row.get('regionname', row.get('regionName')), 
+                   "mint": row['mint'], 
+                   "maxt": row['maxt']} for row in rows]
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -92,16 +108,16 @@ def get_forecast_week():
 
     try:
         data_updater.init_db_if_needed()
-        conn = get_db_connection()
-        rows = conn.execute('''
+        rows = execute_query('''
             SELECT dataDate, mint, maxt FROM TemperatureForecasts 
             WHERE regionName = ?
             ORDER BY dataDate ASC
             LIMIT 7
-        ''', (region,)).fetchall()
-        conn.close()
+        ''', (region,))
 
-        result = [{"date": row['dataDate'], "mint": row['mint'], "maxt": row['maxt']} for row in rows]
+        result = [{"date": row.get('datadate', row.get('dataDate')), 
+                   "mint": row['mint'], 
+                   "maxt": row['maxt']} for row in rows]
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -339,3 +339,19 @@ Chronological record of development sessions, decisions, and changes.
 
 **Next steps:**
 - 使用者將此專案推送到 GitHub 並進行 Vercel 正式上線佈署。
+
+---
+
+## Session: 2026-04-22 升級 Vercel Postgres 雙棲架構
+
+**Objective:**
+解決 Vercel Serverless 架構下 SQLite 在 `/tmp` 作為唯讀快取所衍生的「Cron Job 無效」、「冷啟動延遲」與「API Rate Limiting 封鎖風險」，將系統正式升級為 Production Ready 的雲端關聯式資料庫架構。
+
+**Action:**
+- **引入 Postgres 驅動**: 在 `CompleteProject/backend/requirements.txt` 中新增 `psycopg2-binary`。
+- **雙棲建表機制**: 重構 `data_updater.py`，啟動時自動偵測 `POSTGRES_URL` 環境變數。若存在，則採用 PostgreSQL 的 `SERIAL PRIMARY KEY` 與 `%s` 參數綁定建表與寫入；否則退回使用本地的 SQLite。
+- **統一查詢介面**: 重構 `app.py` 的 SQL 執行邏輯，建立 `execute_query` 抽象層，抹平了 SQLite 與 Postgres 在資料指標 (`Row` vs `RealDictRow`) 以及欄位大小寫返回規則 (`regionName` vs `regionname`) 上的差異，達成程式碼高度共用。
+- **撰寫部署教學**: 建立 `walkthrough.md` 教導使用者如何在 Vercel 控制台上開啟 Storage 並將 `POSTGRES_URL` 注入專案環境。
+
+**Next steps:**
+- 依照教學啟用 Vercel Postgres，並將新版程式碼推送至 GitHub 觸發自動切換資料庫與正式部署。

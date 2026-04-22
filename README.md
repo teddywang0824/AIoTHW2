@@ -4,12 +4,13 @@
 本專案為一個完整的全端 (Full-Stack) 應用程式，專注於提供台灣各區未來一週的農業氣象與溫度趨勢視覺化。專案從最初單純的 API 爬蟲腳本逐步進化，最終整合重構成為一套支援前後端分離、背景自動更新資料，並完美相容於 **Vercel Serverless** 雲端佈署的現代化 Web 儀表板。
 
 ### ✨ 核心亮點：
-- **自動化資料爬取**：內建智慧雙軌排程系統。本地端透過 Background Thread 執行，Vercel 雲端則透過 Cron Jobs 觸發，每 4 小時自動向「中央氣象署 (CWA)」撈取最新一週氣象資料。
-- **SQLite 資料庫整合**：將複雜巢狀 JSON 扁平化並轉存至 SQLite，提升 API 查詢效率，並特製冷啟動 (Cold Start) 偵測機制以完美適應 Serverless 唯讀檔案系統。
+- **自動化資料爬取**：內建智慧雙軌排程系統。本地端透過 Background Thread 執行，Vercel 雲端則透過 Cron Jobs 觸發，每天定時向「中央氣象署 (CWA)」撈取最新氣象資料。
+- **SQLite / PostgreSQL 雙棲資料庫**：將複雜巢狀 JSON 扁平化並轉存至關聯式資料庫中。本地端開發預設採用輕量級 `SQLite`；雲端部署可無縫對接 `Vercel Postgres`，達成真正的 Serverless 雲端原生持久化儲存。
 - **現代化互動前端**：前端採用 React + Vite 構建，介面採用深色玻璃擬態 (Glassmorphism) 風格。
   - **Leaflet 互動地圖**：結合 CartoDB Dark Matter 深色底圖，並依據最高溫自動在地圖上打上熱力色彩標記。
   - **Recharts 趨勢圖**：具備一週高低溫雙折線圖，並提供一鍵切換為「數據清單表格」的彈性功能。
   - **響應式設計 (RWD)**：佈局可根據行動裝置完美彈性縮放，確保手機瀏覽體驗。
+
 
 ---
 
@@ -65,4 +66,10 @@ npm run dev
 
 ## ☁️ Vercel 佈署指南
 
-此專案已完全相容 Vercel Serverless Functions。當您將專案推送到 GitHub 後，請直接在 Vercel 中匯入 `CompleteProject` 根目錄，不須手動進行複雜配置，系統將自動套用 `vercel.json` 裡的轉發與自動更新排程。
+此專案已完全相容 Vercel Serverless Functions 與 Vercel Postgres 雲端資料庫。
+1. 當您將專案推送到 GitHub 後，請直接在 Vercel 中匯入專案，系統將自動套用 `vercel.json` 裡的轉發與自動更新排程。
+2. 進入 Vercel 專案的 **Settings > Environment Variables**，新增一組環境變數：
+   - Key: `CWA_API_KEY`
+   - Value: `您申請的中央氣象署 API Key`
+3. 在專案的 **Storage** 頁籤中點擊 **Create Database** 建立一個 **Postgres** 資料庫並連結。
+4. 連結完成後 Vercel 會自動注入 `POSTGRES_URL`，此時只需觸發重新部署 (Redeploy)，您的儀表板就會瞬間進化為使用雲端資料庫的強大生產環境了！
