@@ -368,6 +368,7 @@ Chronological record of development sessions, decisions, and changes.
 - **新增後端專屬 `vercel.json`**：為了解決 Vercel 無法辨識 `backend/app.py` 為 Python 伺服器所導致的 404 錯誤，在 `backend/` 目錄內新增專屬的 `vercel.json`，明確定義 `builds` 與 `@vercel/python` 的打包與路由規則。
 - **相容 Vercel Route Prefix Stripping**：因 Vercel 微服務路由轉發 `/api/*` 至 backend 時會自動剝除 `/api` 前綴，導致 Flask 接收到 `/options` 而非 `/api/options`。於 `app.py` 中的所有 `@app.route` 新增無前綴的別名綁定 (例如同時綁定 `/api/options` 與 `/options`)，確保路由 100% 命中。
 - **解決 Vercel Read-Only File System 500 崩潰問題**：原本爬蟲在抓到氣象資料後，會嘗試將原始資料寫入 `output.json`，在 Vercel 嚴格的唯讀系統下會引發 500 錯誤。修改 `data_updater.py` 放棄寫入實體檔案，改為直接將爬取到的 JSON 字典存放於記憶體並直送 PostgreSQL/SQLite，徹底消除 `OSError: [Errno 30] Read-only file system` 的風險。
+- **修復 Recharts 無限縮放/閃爍 Bug (Infinite Resize Loop)**：修復大螢幕下 `ResponsiveContainer` 與 `flex` 容器搭配 `overflow-y: auto` 所產生的無限 ResizeObserver 迴圈。透過在圖表模式時動態將 `overflowY` 切換為 `hidden` 並包覆絕對定位 (Absolute) 容器，成功切斷捲軸與 `ResponsiveContainer` 寬度之間的惡性循環，使圖表尺寸穩定。
 
 **Next steps:**
 - 提交更新後的程式碼，再次於 Vercel 觸發自動編譯與部署。

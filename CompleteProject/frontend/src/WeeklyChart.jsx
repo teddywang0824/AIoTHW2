@@ -75,13 +75,14 @@ const WeeklyChart = ({ region }) => {
           切換為{viewMode === 'chart' ? '表格' : '圖表'}
         </button>
       </div>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: viewMode === 'chart' ? 'hidden' : 'auto', position: 'relative', width: '100%' }}>
         {viewMode === 'chart' ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={data}
-              margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
-            >
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={data}
+                margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+              >
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
               <XAxis dataKey="shortDate" stroke="#cbd5e1" fontSize={12} tickMargin={10} />
               <YAxis stroke="#cbd5e1" fontSize={12} domain={['dataMin - 2', 'dataMax + 2']} tickFormatter={(v) => `${v}˚`} />
@@ -108,6 +109,7 @@ const WeeklyChart = ({ region }) => {
               />
             </LineChart>
           </ResponsiveContainer>
+          </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center' }}>
             <thead>

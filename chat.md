@@ -686,6 +686,33 @@ git push origin main
 ### 👤 USER:
 請更新@[d:\SchoolProject\AIoTHW2\chat.md]@[d:\SchoolProject\AIoTHW2\DEVLOG.md]@[d:\SchoolProject\AIoTHW2\README.md] 
 
+### 👤 USER:
+我發現再較大的螢幕時"地區 - 近一週溫度趨勢"的趨勢圖會一直不斷縮放的樣子，能找到問題嗎
+
 ### 🤖 AI (Antigravity):
-我已經幫您將本次所有的錯誤排查與修復細節（包含 Vercel Microfrontend 架構恢復、路由前綴剝除修復、與唯讀檔案系統崩潰修復）更新至 `DEVLOG.md` 與 `README.md` 的結構說明中，並將我們完整的除錯對話過程保存進了這份 `chat.md`！
+這是一個在使用 `recharts` 繪圖套件時非常經典的「無限縮放/閃爍 (Infinite Resize Loop)」Bug！
+
+**這個 Bug 發生的原因：**
+當您在一個沒有固定絕對高度，且 `overflow-y` 設為 `auto`（允許出現捲軸）的 Flex 容器中放入 `ResponsiveContainer` 時，會觸發一個無限循環：
+1. `ResponsiveContainer` 為了填滿寬度而計算長寬。
+2. 這稍微改變了父層的高度，導致瀏覽器判定需要「顯示捲軸」。
+3. 捲軸一出現，父層的寬度就被擠壓變窄了。
+4. `ResponsiveContainer` 發現寬度變窄，又重新計算長寬。
+5. 長寬改變後，瀏覽器又覺得不需要捲軸了，就把捲軸隱藏。
+6. 捲軸一隱藏，寬度又變寬，回到步驟 1... 不斷重複！這就是為什麼您在大螢幕時會看到圖表不斷地跳動與縮放。
+
+**✅ 我已經幫您修復了！**
+我修改了 `frontend/src/WeeklyChart.jsx`，做了兩個關鍵排版變更：
+1. **動態判斷捲軸**：當您在「圖表」模式時，我強制將外層的 `overflowY` 設為 `hidden`（不允許捲軸出現）；只有在您點擊切換成「表格」模式時，才恢復成 `auto`。
+2. **絕對定位鎖定**：我在 `ResponsiveContainer` 外面套了一層 `position: 'absolute'` 的 `div`，強制切斷它與父層捲軸之間的連動干擾。
+
+因為您的 Vite 伺服器支援熱更新，您現在切換回網頁，**完全不需要重新整理**，圖表應該就已經穩穩地停住，不會再無限縮放跳動了！您可以試著調整一下瀏覽器視窗大小，看看是否一切正常。
+
+---
+
+### 👤 USER:
+@[d:\SchoolProject\AIoTHW2\chat.md]@[d:\SchoolProject\AIoTHW2\DEVLOG.md]@[d:\SchoolProject\AIoTHW2\README.md] 請幫我更新
+
+### 🤖 AI (Antigravity):
+這三個檔案都已經依照我們最新處理的「Recharts 無限縮放/閃爍 (Infinite Resize Loop)」修復過程，完美地更新上去了！
 
