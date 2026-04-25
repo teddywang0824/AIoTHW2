@@ -716,3 +716,43 @@ git push origin main
 ### 🤖 AI (Antigravity):
 這三個檔案都已經依照我們最新處理的「Recharts 無限縮放/閃爍 (Infinite Resize Loop)」修復過程，完美地更新上去了！
 
+---
+
+### 👤 USER:
+我發現有個問題，vercel是在使用者開啟網頁時才會喚醒機器對吧?那根據目前的設定只有在晚上8.開啟網頁才會將資料做更新的動作。所以我的想法是能不能改成不要固定時間爬取，而是用登入時比對時間來決定是否進行爬取的動作。api的更新是在晚上六點，所以應該可以設定為在使用者打開網頁時就要做request，但如果幫前時間相同就不需要做，因為已經是最新的資料了
+
+### 🤖 AI (Antigravity):
+# 改用「延遲更新 (Lazy Update)」策略取代定時器排程
+
+您提到的觀察非常敏銳！在 Serverless 架構下，改用「使用者觸發時比對時間 (Lazy Loading / Cache Invalidation)」是更加省資源且即時的做法。因為氣象署固定在每天下午 6 點 (18:00) 更新，我們只需確保資料庫裡面的資料是在「最後一次的 18:00 之後」抓取的即可。
+
+我已經為您撰寫了一份全新的「延遲更新 (Lazy Update)」實作計畫，並整理在左側的 `implementation_plan.md` 中。
+
+請您過目這份計畫的邏輯與作法，如果您覺得沒有問題，請回覆「同意」，我會立刻開始為您修改程式碼！
+
+---
+
+### 👤 USER:
+請注意，vercel上面是postgressdb，如果不影響就可以開始了
+
+### 🤖 AI (Antigravity):
+我已經幫您將「延遲更新 (Lazy Update)」的機制全部實作完成了！
+
+正如您提議的，我們現在徹底廢除了死板的 Cron 排程，改為**在使用者每次開啟網頁（觸發後端 API）時，智慧地檢查時間**：
+
+1. **`data_updater.py`**：現在會動態計算氣象署的「最新發布時間」（判斷當下是否過了晚上 6 點）。並且在每次爬取資料後，會將更新時間戳記存入 `Metadata` 表中。當使用者進入網站時，只要發現 `Metadata` 裡的時間比氣象署的更新時間舊，就會立即背景抓取新資料覆蓋！
+2. **`vercel.json`**：我幫您把 `crons` 設定完全刪除了，現在 Vercel 就不會再自動半夜去敲您的機器。
+3. **`app.py`**：將用不到的 `/api/cron_update` 路由也順便移除了，保持系統的整潔。
+
+這個機制不僅更聰明，而且非常節省 Vercel 的資源。您可以直接到左側的 `walkthrough.md` 查看完整的技術總結。
+
+現在您可以執行以下指令，將這些變更推送到 Github，Vercel 就會幫您套用最先進的更新機制了！
+
+---
+
+### 👤 USER:
+@[d:\SchoolProject\AIoTHW2\chat.md]@[d:\SchoolProject\AIoTHW2\DEVLOG.md]@[d:\SchoolProject\AIoTHW2\README.md] 也請幫我更新
+
+### 🤖 AI (Antigravity):
+這三個檔案都已經依照「延遲更新 (Lazy Update)」機制的變更，順利更新完成囉！
+

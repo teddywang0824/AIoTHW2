@@ -372,3 +372,19 @@ Chronological record of development sessions, decisions, and changes.
 
 **Next steps:**
 - 提交更新後的程式碼，再次於 Vercel 觸發自動編譯與部署。
+
+---
+
+## Session: 2026-04-25 引入延遲更新 (Lazy Update) 策略
+
+**Objective:**
+廢除固定時間的排程任務 (Cron Jobs / Background Threads)，改為由使用者觸發網頁時，動態判斷是否需要向氣象署重新爬取最新資料。因為氣象署資料每天 18:00 更新，這項改動能達成真正的零 API 浪費與資源極致優化。
+
+**Action:**
+- **移除排程依賴**：在 `CompleteProject/vercel.json` 移除 `crons` 陣列設定，並從 `app.py` 中移除了對應的 `/api/cron_update` API 路由。
+- **建置 Metadata 時間追蹤**：修改 `data_updater.py` 裡的 `_insert_json_to_db()`，在爬取天氣寫入資料庫的同時，建立 `Metadata` 資料表並將當下的 UTC+8 ISO 時間存入 `last_update` 鍵值。
+- **實作智慧比對邏輯**：重構 `init_db_if_needed()`，改為向資料庫查詢 `last_update`。並撰寫 `get_latest_cwa_update_time()` 判斷當下是否跨過了 18:00 (更新線)。若時間已過期，則立刻觸發 `fetch_and_save_weather_data()`。
+- **關閉本地背景執行緒**：將 `start_scheduler()` 內的無窮迴圈關閉，讓開發環境與 Vercel 雲端環境完全一致地採用 Lazy Update 策略。
+
+**Next steps:**
+- 提交更改，Vercel 上線後系統將根據時間戳記全自動無縫管理資料。

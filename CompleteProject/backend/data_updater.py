@@ -4,6 +4,7 @@ import sqlite3
 import requests
 import threading
 import time
+from datetime import datetime, timedelta, timezone
 
 try:
     import psycopg2
@@ -56,6 +57,19 @@ def fetch_and_save_weather_data():
         print(f"[DataUpdater] 抓取 API 發生錯誤: {e}")
         return None
 
+def get_latest_cwa_update_time():
+    tz = timezone(timedelta(hours=8))
+    now = datetime.now(tz)
+    # CWA API updates at 18:00
+    if now.hour >= 18:
+        return now.replace(hour=18, minute=0, second=0, microsecond=0)
+    else:
+        return now.replace(hour=18, minute=0, second=0, microsecond=0) - timedelta(days=1)
+
+def get_current_time_str():
+    tz = timezone(timedelta(hours=8))
+    return datetime.now(tz).isoformat()
+
 def _insert_json_to_db(data):
     is_postgres = POSTGRES_URL and psycopg2 is not None
     
@@ -78,6 +92,12 @@ def _insert_json_to_db(data):
                 maxt INTEGER NOT NULL
             )
         ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS Metadata (
+                key VARCHAR(255) PRIMARY KEY,
+                value VARCHAR(255) NOT NULL
+            )
+        ''')
     else:
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS TemperatureForecasts (
@@ -86,6 +106,12 @@ def _insert_json_to_db(data):
                 dataDate TEXT NOT NULL,
                 mint INTEGER NOT NULL,
                 maxt INTEGER NOT NULL
+            )
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS Metadata (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
             )
         ''')
     
@@ -133,6 +159,14 @@ def _insert_json_to_db(data):
             INSERT INTO TemperatureForecasts (regionName, dataDate, mint, maxt)
             VALUES (?, ?, ?, ?)
         ''', records_to_insert)
+        
+    # 寫入最後更新時間
+    cursor.execute("DELETE FROM Metadata WHERE key = 'last_update'")
+    current_time_str = get_current_time_str()
+    if is_postgres:
+        cursor.execute("INSERT INTO Metadata (key, value) VALUES ('last_update', %s)", (current_time_str,))
+    else:
+        cursor.execute("INSERT INTO Metadata (key, value) VALUES ('last_update', ?)", (current_time_str,))
     
     conn.commit()
     conn.close()
@@ -141,39 +175,69 @@ def _insert_json_to_db(data):
     print(f"[DataUpdater] 成功將 {len(records_to_insert)} 筆資料匯入至 {db_type} 中！")
 
 def init_db_if_needed():
-    # 若為 Postgres，連線並檢查 table 是否存在
     is_postgres = POSTGRES_URL and psycopg2 is not None
+    needs_update = False
+    
     if is_postgres:
         try:
             conn = psycopg2.connect(POSTGRES_URL)
             cursor = conn.cursor()
-            cursor.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'temperatureforecasts');")
-            exists = cursor.fetchone()[0]
+            
+            # 檢查 Metadata 是否存在 (小寫或大寫取決於系統，一律用 lower() 比對比較保險，但在 Postgres 建表如果沒加引號預設是小寫)
+            cursor.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'metadata' OR table_name = 'Metadata');")
+            has_metadata = cursor.fetchone()[0]
+            
+            if not has_metadata:
+                needs_update = True
+            else:
+                cursor.execute("SELECT value FROM Metadata WHERE key = 'last_update'")
+                row = cursor.fetchone()
+                if not row:
+                    needs_update = True
+                else:
+                    last_update_str = row[0]
+                    last_update_time = datetime.fromisoformat(last_update_str)
+                    if last_update_time < get_latest_cwa_update_time():
+                        needs_update = True
             conn.close()
-            if not exists:
-                print("[DataUpdater] 偵測到 Postgres 無資料表，進行初始爬取...")
-                fetch_and_save_weather_data()
         except Exception as e:
             print(f"[DataUpdater] 初始化 Postgres 檢查時發生錯誤: {e}")
+            needs_update = True
     else:
         # SQLite 邏輯
         if not os.path.exists(DB_PATH):
-            print("[DataUpdater] 偵測到本地無資料庫，進行初始爬取...")
-            fetch_and_save_weather_data()
+            needs_update = True
+        else:
+            try:
+                conn = sqlite3.connect(DB_PATH)
+                cursor = conn.cursor()
+                cursor.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='Metadata'")
+                has_metadata = cursor.fetchone()[0] > 0
+                if not has_metadata:
+                    needs_update = True
+                else:
+                    cursor.execute("SELECT value FROM Metadata WHERE key = 'last_update'")
+                    row = cursor.fetchone()
+                    if not row:
+                        needs_update = True
+                    else:
+                        last_update_str = row[0]
+                        last_update_time = datetime.fromisoformat(last_update_str)
+                        if last_update_time < get_latest_cwa_update_time():
+                            needs_update = True
+                conn.close()
+            except Exception as e:
+                print(f"[DataUpdater] 初始化 SQLite 檢查時發生錯誤: {e}")
+                needs_update = True
+
+    if needs_update:
+        print("[DataUpdater] 偵測到無資料或資料已過期，進行即時爬取 (Lazy Update)...")
+        fetch_and_save_weather_data()
+    else:
+        print("[DataUpdater] 檢查完畢：目前資料已是最新，無需爬取。")
 
 def start_scheduler():
     init_db_if_needed()
-    
-    # 若為 Vercel 佈署，不啟用無窮迴圈的 Background Thread
-    if IS_VERCEL:
-        print("[DataUpdater] 偵測到 Vercel 環境，跳過 Background Thread 排程，改由 API Router 觸發。")
-        return
-
-    print("[DataUpdater] 啟動本地排程器 (每 4 小時執行一次)...")
-    def run_update():
-        while True:
-            time.sleep(4 * 3600)  # 4 hours
-            fetch_and_save_weather_data()
-
-    thread = threading.Thread(target=run_update, daemon=True)
-    thread.start()
+    # 由於改用 Lazy Update 策略，不需要啟動無窮迴圈的 Background Thread 了
+    # 當使用者打 API 進來時，Flask 會自動觸發這段邏輯來檢查是否更新
+    print("[DataUpdater] 延遲更新機制 (Lazy Update) 已就緒，不再啟動定時器。")

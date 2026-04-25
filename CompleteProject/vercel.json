@@ -8,11 +8,5 @@
       "entrypoint": "backend",
       "routePrefix": "/api"
     }
-  },
-  "crons": [
-    {
-      "path": "/api/cron_update",
-      "schedule": "0 12 * * *"
-    }
-  ]
+  }
 }

@@ -34,15 +34,7 @@ def execute_query(query, params=(), fetch_all=True):
     conn.close()
     return result
 
-@app.route('/api/cron_update', methods=['GET'])
-@app.route('/cron_update', methods=['GET'])
-def cron_update():
-    """Vercel Cron Job endpoint 呼叫此 API 以自動更新"""
-    try:
-        data_updater.fetch_and_save_weather_data()
-        return jsonify({"status": "success", "message": "Weather data updated successfully."}), 200
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 @app.route('/api/options', methods=['GET'])
 @app.route('/options', methods=['GET'])
